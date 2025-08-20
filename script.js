@@ -22,6 +22,7 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
+const btnReset = document.querySelector('.btn-reset');
 
 class Workout {
   date = new Intl.DateTimeFormat('en-US', {
@@ -72,8 +73,24 @@ class App {
   #workouts = [];
   constructor() {
     this._getPosition();
+    // get data from local storage
+    this._getLocalStorage();
+    // attach event handlers
     form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField.bind(this));
+    containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
+    btnReset.addEventListener('click', this.reset.bind(this));
+  }
+  _moveToPopup(e) {
+    const workoutEl = e.target.closest('.workout');
+    if (!workoutEl) return;
+    const currWorkout = this.#workouts.find(w => w.id === workoutEl.dataset.id);
+    this.#map.setView(currWorkout.coords, 15, {
+      animate: true,
+      pan: {
+        duration: 1,
+      },
+    });
   }
   _getPosition() {
     if (navigator.geolocation) {
@@ -99,6 +116,7 @@ class App {
       .bindPopup('📌Current Location.')
       .openPopup();
 
+    this.#workouts.forEach(workout => this._popUpreload(workout));
     this.#map.on('click', this._showForm.bind(this));
   }
   _showForm(e) {
@@ -142,8 +160,12 @@ class App {
       this.renderWorkouts(workout);
       //   console.log(workout);
     }
-
-    const { lat, lng } = this.#mapEvent.latlng;
+    this._popUpreload(workout);
+    this._setLocalStorage();
+  }
+  // popUp the data
+  _popUpreload(workout) {
+    const { lat, lng } = workout.coords;
     const marker = L.marker([lat, lng]).addTo(this.#map);
     marker
       .bindPopup(
@@ -152,7 +174,7 @@ class App {
           minWidth: 100,
           autoClose: false,
           closeOnClick: false,
-          className: `${type}-popup`,
+          className: `${workout.type}-popup`,
         })
       )
       .setPopupContent(
@@ -162,7 +184,6 @@ class App {
       )
       .openPopup();
     form.classList.add('hidden');
-    console.log(this.#workouts);
   }
   // validate inputs
   _validateInputs(distance, duration, extra) {
@@ -228,5 +249,21 @@ class App {
     }
     form.insertAdjacentHTML('afterend', html);
   }
+  _setLocalStorage() {
+    localStorage.setItem('workouts', JSON.stringify(this.#workouts));
+  }
+  _getLocalStorage() {
+    const data = JSON.parse(localStorage.getItem('workouts'));
+    if (!data) return;
+    this.#workouts = data;
+    this.#workouts.forEach(workout => {
+      this.renderWorkouts(workout);
+    });
+  }
+  reset() {
+    localStorage.removeItem('workouts');
+    location.reload();
+  }
 }
 const app = new App();
+// console.log(JSON);
