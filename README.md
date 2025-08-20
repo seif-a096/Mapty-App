@@ -18,9 +18,9 @@ Mapty is a web application that allows users to log and visualize their **runnin
 - Local Storage API  
 - HTML5, CSS3  
 
---
+---
 ## ▶️ How to Run  
 1. Clone the repository:  
    ```bash
    git clone https://github.com/seif-a096/Mapty-App.git
---
+---
